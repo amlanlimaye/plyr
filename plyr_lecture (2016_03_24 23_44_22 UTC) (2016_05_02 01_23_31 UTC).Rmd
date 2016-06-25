@@ -1,0 +1,132 @@
+---
+title: "plyr_Amlan"
+author: "Amlan Limaye"
+date: "Saturday, February 14, 2015"
+output: pdf_document
+---
+
+
+## Introduction
+
+A lot of data analysis problems involve the application of a split-apply-combine strategy, where you split your dataset into manageable pieces, operate on each of the pieces and then put all the pieces back together.
+
+These images illustrate the different ways of splitting a data frame:
+
+![](C:\Users\amlanlimaye\Desktop\MSBA\DSO 545\plyr stuff\Capture.PNG)
+![](C:\Users\amlanlimaye\Desktop\MSBA\DSO 545\plyr stuff\Capture2.PNG)
+
+You could implement the split-apply-combine strategy using for loops, apply functions or plyr functions. 
+
+## Q. Why are apply functions better than for loops?
+
+1. The code is cleaner and less error prone.
+2. For loops have a lot of book-keeping code: The size of the array is hard coded in multiple places and we need to create the output structures before filling them with data.
+3. For loops also take longer to execute.
+
+## Q. Why use plyr over apply functions?
+
+1. plyr has a common syntax - easier to remember.
+2. plyr requires less code since it takes care of the input and output format.
+3. plyr also adds some niceties like error processing, parallel processing, and progress bars.
+
+The whole idea behind the creation of the plyr package was to make it easier to perform the split-apply-combine strategy and free up mental effort for more important aspects of the problem you're working with. And its interesting that Hadley Wickham, the author of the plyr package actually spends a couple of paragraphs talking about the importance of freeing up mental effort in his paper.
+
+We're going to continue working with the baseball dataset. Lets start off simple, and then we'll move on to some real hardcore stuff.
+
+Our objective is to find the average number of runs for each year in the baseball dataset.
+First, I'm going to demonstrate just how difficult it is to split-apply-combine without the plyr or apply functions.
+
+```{r, echo=FALSE}
+
+library(plyr)
+head(baseball)
+baberuth <- subset(baseball, id == "ruthba01")
+baberuth <- transform(baberuth, cyear = year - min(year) + 1)
+baseball_2 <- ddply(baseball, .(id), transform, cyear = year - min(year) + 1)
+
+```
+
+```{r}
+
+#Splitting Number of runs by year
+pieces <- split(baseball[,"r"], baseball$year)
+
+# Applying mean function to pieces
+avg <- NULL ## creating vector to store the average runs for each year (have to create 
+            ## output structure before filling them with data)
+for(i in seq(1, length(pieces)))
+avg[i] <- mean(pieces[[i]]) ## size of the avg array is hard coded by for loop
+
+# Combining results
+result <- matrix(ncol = 2, nrow = length(avg))
+result[,1] <- unique(baseball$year)
+result[,2] <- avg
+colnames(result) <- c("year", "runs")
+## head(result)
+
+
+## An equivalent way to get the above result using ddply is:
+result_ddply <- ddply(baseball, "year", summarize, runs = mean(r))
+## head(result_ddply) ## which is very similar to the stuff we did for Quiz 1.
+
+```
+
+Who's ready for some hardcore stuff now?
+We're now going to apply a linear model to each player in our dataset!
+
+```{r}
+
+## We're going to continue using the dataset Cecilia created.
+
+## head(baseball_2)
+
+## applying model to all players
+
+models <- dlply(baseball_2, .(id), lm, formula = r ~ ab) ## output data frame = list
+## head(models) ## not very tidy, we'll do something about that in a second
+
+## Lets make a tidy data frame of the model coefficients
+
+coefs <- ldply(models, coef)
+## head(coefs)
+
+## We've now created a model but what good is it if you don't use it to predict something?!
+## Lets try to predict something!
+## Predict how many runs each player would make if he has 500 at bats
+
+predictions <- ldply(models, predict, data.frame(ab = 500))
+
+## Open link for rank deficiency in browser (rank deficiency warnings)
+
+## We need to create a list to view the data for respective models!
+
+baseball_2_list <- dlply(baseball, .(id), transform, cyear = year - min(year) + 1)
+## head(baseball_2_list)
+## baseball_2_list[c(93,326,337,433,689,815)]
+
+## head(predictions)
+
+## Another useful plyr function is count().
+
+head(count(baseball, "id", "ab"))
+```
+
+## Test your knowledge of ddply (HW Assignment)!
+
+```{r}
+
+## Produce a data frame containing 4 columns: player id, total games played by the player,
+## whether he is still active or not, number of teams he has played for.
+
+```
+
+Your answer should look like this:
+
+![](C:\Users\amlanlimaye\Desktop\MSBA\DSO 545\plyr stuff\Capture3.PNG)
+
+```{r}
+ans <- ddply(baseball,"id",summarise ,total_games=sum(g),
+      still_active=ifelse(max(year)==2007,"Yes","No"),
+      number_teams=length(unique(team)))
+## head(ans)
+```

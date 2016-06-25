@@ -1,0 +1,106 @@
+---
+title: "DSO 545: Statistical Computing and Data Visualization"
+author: "Amlan Limaye, Evan Aronson, Jia Luo, Su Lei, Wenjie Xu"
+date: "Thursday, February 19, 2015"
+output: pdf_document
+---
+
+### What will we learn?
+    1. Intro to plyr package
+    2. Theory and concept of plyr
+    3. 12 core functions of plyr
+    4. plyr Progress Bar
+    5. Helper functions
+    6. Intro to dplyr
+    7. dplyr chain function
+    8. Additional resources
+    
+    _________________________________________
+    
+Good morning class, let's begin today's lecture. 
+
+We have here Amlan, Evan, Su, Wenjie today to introduce a R package that will make a data scientist's life, like yourselfs easier. 
+
+The package we are going to talk about is PLYR 
+
+**(action) write on the board**
+
+Q Anyone heard of or used this package before???
+
+In previous exercises a few class ago, we have all seen the use of ddply in subsetting and summarising data. 
+
+Fundamentally, as the author "Hadley Wickham" (also) the author of ggplot2, puts it, this packages aims to accomplish the goal of "split- apply-combine" strategy often used in data analysis. 
+
+**(action)write on the board Split-Apply-Combine**
+
+There are similar existing tools that can do SAC such as:
+
+ - Excel's pivot tables
+ - SQL group by operator
+ - "by argument" to many SAS procedures
+ 
+Let's try it out in R and see for yourself what PLYR can do 
+
+1. Load PLYR in library
+```{r}
+library(plyr)
+
+#optional to load ggplot2 
+library(ggplot2)
+```
+
+2. We will use the plyr dataset 'baseball' today. It contains around 15 years of data, and 23 variables. But we will mainly focus on
+
+  - id: player id
+  - year: year of the record
+  - rbi: runs batted in 
+  - ab: number of times the player faced the pitcher
+
+```{r}
+?baseball
+```
+
+3. Lets look at the performance of a batter over his career. So first we want to know the number of years the player started playing. 
+
+For a single player, Ruthba01
+
+**(action)double click the "baberuth" data frame to show **
+```{r}
+baberuth <- subset(baseball, id == "ruthba01")
+baberuth <- transform(baberuth, cyear = year - min(year) + 1)
+```
+
+4. Lets graph it have a look how well Babe Ruth did. Here we have the number batted over number of times he batted. 
+```{r}
+baberuth$rbi_ab <- baberuth$rbi/baberuth$ab
+ggplot(baberuth, aes(x=cyear, y=rbi_ab))+
+  geom_line()
+```
+
+5. What should we do if we want to do this for every one of the batters?
+
+**(action) Can anyone suggest any way to do this in R?**
+
+Here is a teaser, of how we can manipulate our data. How about the plots? How can we run a plot for each 1228 batter? 
+```{r}
+## Here is how we can easily do in R
+baseball_2 <- ddply(baseball, .(id), transform,
+                  cyear = year - min(year) + 1)
+
+head(baseball_2)
+
+#number of unique batters
+length(unique(baseball$id))
+```
+
+Next, Amlan will start by explaining the concept of PLYR and piece together the tools and process to solve data analysis problems similar to the batter one. 
+
+Wenjie will introduce the 12 core functions in the PLYR package and progress bar. 
+
+Evan will introduce the helper functions. 
+
+And Su will wrap up with additional useful information including dplyr and chain function. 
+
+
+
+
